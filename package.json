@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/nhatle16/simple-rest-api#readme",
   "dependencies": {
+    "dotenv": "^17.2.3",
     "express": "^5.2.1"
   },
   "devDependencies": {
