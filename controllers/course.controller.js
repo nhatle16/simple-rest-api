@@ -5,36 +5,37 @@ const getCourses = async (req, res) => {
   res.status(200).json({ success: true, data: courses });
 }
 
-const getCourseByName = async (req, res) => {
+const getCourseById = async (req, res) => {
   try {
-    const { name: courseName } = req.body;
-    // Validation
-    const course = await Course.findOne({
-      name: courseName
-    });
+    const { id } = req.params;
+    const course = await Course.findById(id);
 
+    // Validate if course exists
     if (!course) {
       return res.status(404).json({
         success: false,
-        message: `No course with given name`
+        message: `No course with given id`
       });
     }
 
     res.status(200).json({
       success: true, 
-      message: `Course is retrieved successfully`,
+      message: "Course retrieved successfully",
       data: course
     });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    res.status(400).json({
+      success: false,
+      message: "Invalid course id"
+    });
   }
 }
 
 const createCourse = async (req, res) => {
   try {
-    const { name: courseName } = req.body;
+    const { name: newName } = req.body;
     // Validation
-    if (!courseName) {
+    if (!newName) {
       return res.status(400).json({
         success: false,
         message: "Course name is required"
@@ -42,7 +43,7 @@ const createCourse = async (req, res) => {
     }
     
     // Check if the course is already exist
-    const existing = await Course.findOne({ name: courseName });
+    const existing = await Course.findOne({ name: newName });
     if (existing) {
       return res.status(400).json({
         success: false,
@@ -51,7 +52,10 @@ const createCourse = async (req, res) => {
     }
 
     // Create a new course
-    const course = await Course.create({ name: courseName });
+    const course = await Course.create({
+      id: courses.length + 1,
+      name: newName
+    });
     res.status(201).json({
       success: true,
       message: "New course is created successfully",
@@ -62,42 +66,56 @@ const createCourse = async (req, res) => {
   }
 }
 
-const updateCourseName = async (req, res) => {
+const updateCourse = async (req, res) => {
   try {
-    const { name: courseName } = req.body;
-    const course = Course.findOne({
-      name: courseName
-    });
+    const { id } = req.params;
+    const { name: newName } = req.body;
 
     // Validation
+    if (!newName) {
+      return res.status(400).json({
+        success: false,
+        message: `New course name is required`
+      });
+    }
+    
+    // Update the course
+    const course = await Course.findByIdAndUpdate(
+      id,
+      { name: newName },
+      { new: true, runValidators: true }
+    )
+
+    // Validate if course exists
     if (!course) {
       return res.status(404).json({
         success: false,
-        message: `No course with given name`
+        message: "No course with given id"
       });
     }
 
-    // Update course name
-    course.name = courseName;
-
     res.status(200).json({
       success: true,
-      message: "Course name is updated successfully",
+      message: "Course updated successfully",
       data: course
     });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    res.status(400).json({
+      message: "Invalid course id"
+    });
   }
 }
 
 const deleteCourse = async (req, res) => {
   try {
-    const { name: courseName } = req.params;
-    const course =  await Course.findOneAndDelete({ name: courseName });
+    const { id } = req.params;
+    const course =  await Course.findByIdAndDelete(id);
+
+    // Validate if course exists
     if (!course) {
       return res.status(404).json({
         success: false,
-        message: "No course with given name"
+        message: "No course with given id"
       });
     }
     res.status(204).json({
@@ -111,8 +129,8 @@ const deleteCourse = async (req, res) => {
 
 module.exports = {
   getCourses,
-  getCourseByName,
+  getCourseById,
   createCourse,
-  updateCourseName,
+  updateCourse,
   deleteCourse
 };
